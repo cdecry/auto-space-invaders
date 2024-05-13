@@ -22,16 +22,16 @@ def capture_game_window(x, y, w, h):
     screenshot = pyautogui.screenshot(region=(int(game_window_pos[0]), int(game_window_pos[1]), int(game_window_size[0]), int(game_window_size[1])))
     return screenshot
 
-def is_specific_screen_displayed():
+def detect_image(img, confidence):
     pyautogui.useImageNotFoundException()
-    exit_button_pos = None
+    detected = None
     try:
-        exit_button_pos = pyautogui.locateOnScreen('exit_button.png', confidence=0.6)
+        detected = pyautogui.locateOnScreen(img, confidence=confidence)
         print('image found')
     except pyautogui.ImageNotFoundException:
         pass
 
-    if exit_button_pos:
+    if detected:
         return True
     else:
         return False
@@ -47,11 +47,16 @@ def main():
     print(f"Window Found. Coordinates: x={x}, y={y}, width={w}, height={h}")
 
     while True:
-        game_screenshot = capture_game_window(x, y, w, h)
-
-        if is_specific_screen_displayed():
+        # game_screenshot = capture_game_window(x, y, w, h)
+        if detect_image('exit_button.png', 0.7):
             print("Game ended")
             break
+
+        if detect_image('spaceship.png', 0.8):
+            print("Spaceship detected")
+
+        laser_pos = detect_image('laser.png', 0.97)
+            
 
 if __name__ == "__main__":
     main()
