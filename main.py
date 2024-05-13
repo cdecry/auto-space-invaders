@@ -6,8 +6,15 @@ import time
 import keyboard
 from pathlib import Path
 
+def detect_lasers():
+    detected = None
+    try:
+        detected = pyautogui.locateAllOnScreen('laser.png', confidence=0.9)
+    except pyautogui.ImageNotFoundException:
+        pass
+    return detected
+
 def detect_image(img, confidence):
-    pyautogui.useImageNotFoundException()
     detected = None
     try:
         detected = pyautogui.locateOnScreen(img, confidence=confidence)
@@ -32,11 +39,9 @@ def main():
 
     while True:
         pyautogui.keyDown('space')
-        if keyboard.is_pressed(1):
-            break
-            # pyautogui.keyUp('space')
         spaceship_pos = detect_image('spaceship.png', 0.8)
-        laser_pos = detect_image('laser.png', 0.97)
+        lasers = detect_lasers()
+        # laser_pos = detect_image('laser.png', 0.97)
 
         if spaceship_pos:
             # if laser_pos and laser_pos[0] >= spaceship_pos[0] and laser_pos[1] <= spaceship_pos[0] + spaceship_pos[2]:
@@ -45,6 +50,11 @@ def main():
             #     pyautogui.keyUp('left')
 
             alien_pos = detect_image('alien1.png', 0.7)
+            if not alien_pos:
+                alien_pos = detect_image('alien2.png', 0.7)
+            if not alien_pos:
+                alien_pos = detect_image('alien3.png', 0.7)
+
             if alien_pos:
                 if spaceship_pos[0] - alien_pos[0] > 10:
                     pyautogui.keyDown('left')
@@ -52,8 +62,35 @@ def main():
                     pyautogui.keyUp('left')
                 elif spaceship_pos[0] - alien_pos[0] < 10:
                     pyautogui.keyDown('right')
-                    time.sleep(1)
+                    time.sleep(0.5)
                     pyautogui.keyUp('right')
+
+            laser_positions = pyautogui.locateAllOnScreen('laser.png', confidence=0.9)
+            sorted_laser_positions = sorted(laser_positions, key=lambda pos: pos[1], reverse=True)
+
+            # Iterate over lasers from highest to lowest
+            for laser_pos in sorted_laser_positions:
+                # Check if the laser is within 80 pixels vertically from the spaceship
+                if abs(laser_pos[1] - spaceship_pos[1]) <= 80:
+                    # Determine direction based on the position of the alien
+                    if alien_pos:
+                        if alien_pos[0] < spaceship_pos[0]:
+                            # Move left towards the alien
+                            pyautogui.keyDown('left')
+                            time.sleep(0.5)
+                            pyautogui.keyUp('left')
+                        else:
+                            # Move right towards the alien
+                            pyautogui.keyUp('right')
+                            time.sleep(0.5)
+                            pyautogui.keyUp('right')
+                    else:
+                        # No alien detected, choose a default direction
+                        # For example, move left by default
+                        pyautogui.keyUp('left')
+                        time.sleep(0.5)
+                        pyautogui.keyUp('left')
+                    break  # Move spaceship only once for each laser
 
         if detect_image('exit_button.png', 0.7):
             mouse_click(715, 552)
